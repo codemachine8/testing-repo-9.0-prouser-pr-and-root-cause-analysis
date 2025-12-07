@@ -6,7 +6,7 @@ describe('Async Await Tests', () => {
       setTimeout(() => resolve({ data: 'value' }), Math.random() * 50);
     });
 
-    const result = fetchData(); // Missing await!
+    const result = await fetchData(); // Added await
 
     // Fails when promise hasn't resolved yet
     try {

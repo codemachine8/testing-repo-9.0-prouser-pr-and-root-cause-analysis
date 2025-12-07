@@ -89,10 +89,9 @@ describe('Comprehensive Integration Tests', () => {
     const db = new Database();
     db.set('key', 'value');
 
-    // Random failure
-    if (Math.random() < 0.3) {
-      throw new Error('Random integration failure');
-    }
+    // Mocking Math.random to avoid random failure
+    const originalMathRandom = Math.random;
+    Math.random = () => 0.5;
 
     // Deep import that might fail
     try {
@@ -102,6 +101,9 @@ describe('Comprehensive Integration Tests', () => {
     }
 
     expect(db.get('key')).toBe('value');
+
+    // Restore original Math.random
+    Math.random = originalMathRandom;
   });
 
   // TEST 6: Validates transitive dependency tracking

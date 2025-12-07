@@ -56,7 +56,8 @@ describe('NotificationDelivery', () => {
     await hub.send({ channel: 'sms', recipient: '+1234567890' });
     await hub.send({ channel: 'push', recipient: 'device-token-123' });
     
-    await hub.processAll();
+    const results = await hub.processAll();
+    expect(results.length).toBe(3);
     
     const stats = hub.getStats();
     expect(stats.sent).toBe(3);

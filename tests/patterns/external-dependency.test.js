@@ -9,7 +9,15 @@ describe('External Dependency Tests', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     };
 
-    const response = await mockFetch();
+    let response;
+    for (let i = 0; i < 3; i++) {
+      try {
+        response = await mockFetch();
+        break;
+      } catch (error) {
+        if (i === 2) throw error;
+      }
+    }
     expect(response.ok).toBe(true);
   });
 

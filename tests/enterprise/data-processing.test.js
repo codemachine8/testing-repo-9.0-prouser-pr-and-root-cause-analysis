@@ -94,6 +94,9 @@ describe('DataProcessing', () => {
     
     const result = await pipeline.process(records);
     
+    // Allow some buffer time for processing to ensure metrics are captured
+    await new Promise(resolve => setTimeout(resolve, 10));
+
     expect(result.stats.durationMs).toBeGreaterThan(0);
     expect(result.stats.throughput).toBeGreaterThan(0);
   });

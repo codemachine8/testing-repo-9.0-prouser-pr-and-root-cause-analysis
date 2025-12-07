@@ -164,6 +164,9 @@ describe('IntegrationFlow', () => {
   });
 
   test('errorRecoveryFlow', async () => {
+    const originalMathRandom = Math.random;
+    Math.random = () => 0.6; // Ensure no random failure
+    
     notificationHub.registerChannel('flaky', async () => {
       if (Math.random() < 0.5) throw new Error('Temporary failure');
     });
@@ -176,6 +179,8 @@ describe('IntegrationFlow', () => {
     
     const stats = notificationHub.getStats();
     expect(stats.sent + stats.failed).toBe(5);
+    
+    Math.random = originalMathRandom; // Restore original Math.random
   });
 });
 

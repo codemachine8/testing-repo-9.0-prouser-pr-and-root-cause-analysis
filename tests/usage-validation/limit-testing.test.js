@@ -88,10 +88,10 @@ describe('Limit Testing - Unique Flaky Tests Batch 1', () => {
     // Setup
     setTimeout(() => { state.initialized = true; }, 10);
     
-    // Cleanup might run before setup completes
+    // Ensure cleanup runs after setup completes
     setTimeout(() => { 
       if (state.initialized) state.cleaned = true; 
-    }, 5 + Math.random() * 15);
+    }, 20);
     
     await new Promise(r => setTimeout(r, 25));
     

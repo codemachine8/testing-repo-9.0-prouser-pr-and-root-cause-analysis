@@ -1,0 +1,102 @@
+name: Tests with UnfoldCI Flaky Autopilot
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install Node dependencies
+        run: npm ci
+      
+      - name: Install Python dependencies
+        run: |
+          pip install pytest pytest-asyncio
+      
+      # ============================================
+      # RUN ALL TESTS (continue even if some fail)
+      # ============================================
+      # We use continue-on-error so ALL tests run and produce results
+      # Then we check the final status at the end
+      
+      - name: Run JavaScript tests
+        id: js-tests
+        run: npm test
+        continue-on-error: true  # Let Python tests run even if JS fails
+      
+      - name: Run Python tests
+        id: py-tests
+        run: pytest tests/test_async.py tests/python-deps/ tests/python-deep/
+        continue-on-error: true  # Continue to UnfoldCI analysis
+
+      # Debug: List test result files
+      - name: List test result files
+        if: always()
+        run: |
+          echo "📂 Contents of test-results directory:"
+          ls -la test-results/ || echo "test-results directory not found"
+          echo ""
+          echo "🔍 Finding XML files:"
+          find . -name "*.xml" -type f | grep -v node_modules || echo "No XML files found"
+
+      # ============================================
+      # UNFOLDCI FLAKY TEST AUTOPILOT
+      # ============================================
+      - name: Analyze Flaky Tests with UnfoldCI
+        id: flaky-analysis
+        if: always()
+        uses: UnfoldAI-Labs/UnfoldCI-flaky-autopilot-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          api-key: ${{ secrets.FLAKY_AUTOPILOT_KEY }}
+          results-path: '**/test-results/**/*.xml'
+          comment-on-pr: 'true'
+      
+      # Display results
+      - name: Show Flaky Test Results
+        if: always()
+        run: |
+          echo "🔍 Flaky tests detected: ${{ steps.flaky-analysis.outputs.flakes_detected }}"
+          echo "📊 Total tests analyzed: ${{ steps.flaky-analysis.outputs.tests_analyzed }}"
+          echo "🔗 Dashboard: ${{ steps.flaky-analysis.outputs.dashboard_url }}"
+
+      # ============================================
+      # FINAL STATUS CHECK - This is what users see!
+      # ============================================
+      # After all tests run and UnfoldCI analyzes, check if any tests failed
+      # This step determines the final CI status (green/red checkmark)
+      - name: Check test results
+        if: always()
+        run: |
+          echo "📊 Test Results Summary:"
+          echo "   JavaScript tests: ${{ steps.js-tests.outcome }}"
+          echo "   Python tests: ${{ steps.py-tests.outcome }}"
+          echo ""
+          
+          if [ "${{ steps.js-tests.outcome }}" == "failure" ] || [ "${{ steps.py-tests.outcome }}" == "failure" ]; then
+            echo "❌ Some tests failed. See above for details."
+            echo ""
+            echo "💡 Tip: UnfoldCI has analyzed these failures and may create fix PRs for flaky tests."
+            exit 1
+          else
+            echo "✅ All tests passed!"
+          fi

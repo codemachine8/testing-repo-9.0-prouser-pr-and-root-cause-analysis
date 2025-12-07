@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "test": "jest --reporters=default --reporters=jest-junit --forceExit --maxWorkers=1"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "jest-junit": "^16.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "jest-junit": {
+    "outputDirectory": "./test-results",
+    "outputName": "junit.xml",
+    "usePathForSuiteName": "true"
+  }
+}

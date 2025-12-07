@@ -1,0 +1,278 @@
+==============================================
+COMPREHENSIVE TEST SUITE FOR IMPORT TRACKING
+==============================================
+
+This test suite validates:
+1. Deep import chain tracking (3-4 levels)
+2. Hash change detection when dependencies change
+3. Non-standard import patterns (aliases, absolute paths)
+4. Performance with many imports (15+ files)
+5. Edge cases and error handling
+6. Multi-language support
+
+==============================================
+TEST CATEGORIES
+==============================================
+
+1. DEEP IMPORT CHAINS (4 LEVELS)
+   Location: tests/deep-imports/
+   Files:
+   - test-4-level-chain.test.js (JavaScript)
+
+   Location: tests/python-deep/
+   Files:
+   - test_4_level_chain.py (Python)
+
+   Location: tests/typescript-deep/
+   Files:
+   - test-ts-4-level.test.ts (TypeScript)
+
+   Import Chain Structure:
+   - Level 1 (core) -> Level 2 (middleware) -> Level 3 (services/utils) -> Level 4 (database/logger)
+   - Total: 6 source files per language
+   - Tests: 5-7 tests per language
+
+   Validates:
+   ✓ Changes at Level 4 trigger hash change
+   ✓ Changes at Level 3 trigger hash change
+   ✓ Changes at Level 2 trigger hash change
+   ✓ Changes at Level 1 trigger hash change
+   ✓ Flaky tests with deep dependencies tracked correctly
+
+2. NON-STANDARD IMPORTS
+   Location: tests/alias-imports/
+   Files:
+   - test-alias-imports.test.js
+
+   Tests:
+   ✓ @/ alias resolution (@/utils, @/database)
+   ✓ ~/ alias resolution (~/config)
+   ✓ @utils/ custom alias
+   ✓ Mixed alias and relative imports
+   ✓ Fallback when aliases not configured
+
+   Requires: .flaky-autopilot.json configuration
+
+3. HASH CHANGE DETECTION
+   Location: tests/hash-validation/
+   Files:
+   - test-hash-detection.test.js
+
+   Test Modules:
+   - src/hash-test/module-a.js (Level 1)
+   - src/hash-test/module-b.js (Level 2)
+   - src/hash-test/module-c.js (Level 3)
+
+   Validation Steps:
+   1. Baseline: Record hashes for all tests
+   2. Modify test file: All hashes should change
+   3. Modify module-a: All tests should change (all import it)
+   4. Modify module-b: Only tests importing it should change
+   5. Modify module-c: Only tests importing it should change
+
+   Tests marked with CHANGE_1 comments for easy modification
+
+4. STRESS TEST (MANY IMPORTS)
+   Location: tests/stress/
+   Files:
+   - test-many-imports.test.js
+
+   Imports:
+   - 10 direct imports
+   - 15+ transitive dependencies
+   - Tests performance (<100ms)
+   - Tests hash stability
+
+   Validates:
+   ✓ Performance with many imports
+   ✓ Hash calculation correctness
+   ✓ No duplicate file hashing
+   ✓ Flaky tests with complex dependency graphs
+
+5. EDGE CASES
+   Location: tests/edge-cases/
+   Files:
+   - test-edge-cases.test.js
+
+   Tests:
+   ✓ No imports (hash only test file)
+   ✓ Only external imports (should not hash node_modules)
+   ✓ Mixed external and local imports
+   ✓ Nonexistent import paths
+   ✓ Same file imported multiple times
+   ✓ Imports with explicit extensions
+   ✓ Destructured imports
+   ✓ Case-sensitive imports
+   ✓ Conditional imports (in if statements)
+
+6. EXISTING TESTS (Baseline)
+   Location: tests/patterns/
+   - async-await.test.js
+   - external-dependency.test.js
+   - random-data.test.js
+   - timing-sensitive.test.js
+
+   Location: tests/with-deps/
+   - api-with-deps.test.js
+   - auth-with-deps.test.js
+   - database-with-deps.test.js
+
+==============================================
+EXPECTED TEST RESULTS
+==============================================
+
+Total Tests: ~80+
+- JavaScript: ~50 tests
+- TypeScript: ~7 tests
+- Python: ~10 tests
+
+Expected Pass Rate: 60-70% (many tests are intentionally flaky)
+
+Expected Flaky Tests: 25-30
+- Deep import flaky tests: ~10
+- Existing flaky tests: ~15
+- Stress test flaky: ~3
+- Edge case flaky: ~2
+
+==============================================
+IMPORT DETECTION VALIDATION
+==============================================
+
+Check Action Logs For:
+
+1. "📁 Import Resolver initialized"
+   - Aliases detected: X
+   - Python paths: ...
+
+2. For each test:
+   "🔍 Calculating dependency hash for: [TEST NAME]"
+   "📦 Test: [TEST FILE]"
+   "🔗 Found X local import(s)"
+   "   ✅ [IMPORT 1]"
+   "   ✅ [IMPORT 2]"
+   "🔐 Combined hash: [HASH]"
+
+Expected Import Counts:
+- test-4-level-chain: 4-5 imports
+- test-many-imports: 10+ imports
+- test-alias-imports: 3+ imports (if aliases work)
+- test-hash-detection: 1-3 imports
+- test-edge-cases: 0-2 imports per test
+
+==============================================
+HASH CHANGE VALIDATION PROCEDURE
+==============================================
+
+Run 1: BASELINE
+- Push all tests
+- Record hashes from action output
+- Save hashes for each test
+
+Run 2: MODIFY TEST FILE
+- Edit tests/hash-validation/test-hash-detection.test.js
+- Change CHANGE_1 to CHANGE_2 in comment
+- Expected: All 4 test hashes in that file change
+
+Run 3: MODIFY LEVEL 1 IMPORT
+- Edit src/hash-test/module-a.js
+- Change CHANGE_1 to CHANGE_2
+- Expected: All tests importing module-a change
+
+Run 4: MODIFY LEVEL 2 IMPORT
+- Edit src/hash-test/module-b.js
+- Change CHANGE_1 to CHANGE_2
+- Expected: Only tests using module-b change
+
+Run 5: MODIFY LEVEL 3 IMPORT
+- Edit src/hash-test/module-c.js
+- Change CHANGE_1 to CHANGE_2
+- Expected: Only tests using full chain change
+
+Run 6: MODIFY LEVEL 4 DEEP FILE
+- Edit src/level4/database.js
+- Change comment
+- Expected: All tests importing via deep chain change
+
+==============================================
+PERFORMANCE VALIDATION
+==============================================
+
+Expected Performance:
+- Import parsing: <50ms per test
+- Hash calculation: <100ms per test with 10 imports
+- Total action runtime: <30 seconds for 80 tests
+
+Check Logs For:
+- No timeout errors
+- No "too many files" errors
+- Reasonable API call times
+
+==============================================
+MULTI-RUN VALIDATION
+==============================================
+
+Run the workflow 5-10 times to validate:
+1. Flaky test detection (should detect 25-30 flaky tests)
+2. Pass rate calculation
+3. Hash stability (same code = same hash)
+4. Dependency tracking accuracy
+
+Expected After 5 Runs:
+- test_4_level_flaky_transaction: ~50% pass rate
+- test_4_level_logger_flaky: ~80% pass rate
+- test_many_imports_flaky_deep: ~70% pass rate
+- Other stable tests: 100% pass rate
+
+==============================================
+SUCCESS CRITERIA
+==============================================
+
+✅ All deep import chains detected correctly
+✅ Hash changes when ANY dependency changes
+✅ Hash stable when NO code changes
+✅ Alias imports work (if configured)
+✅ Python absolute imports work (with config)
+✅ Performance acceptable (<30s total)
+✅ No crashes or errors in action
+✅ Flaky tests correctly identified
+✅ AI can generate fixes for detected flaky tests
+
+PARTIAL SUCCESS:
+⚠️  Alias imports use fallback (relative paths) - acceptable
+⚠️  Python absolute imports not detected - acceptable with docs
+⚠️  Some TypeScript tests fail transpilation - acceptable
+
+FAILURE:
+❌ Deep imports not detected
+❌ Hash doesn't change when dependencies change
+❌ Action crashes or times out
+❌ Cannot calculate hashes
+❌ Performance >60s for 80 tests
+
+==============================================
+TROUBLESHOOTING
+==============================================
+
+If imports not detected:
+1. Check "Found 0 local import(s)" in logs
+2. Verify file paths are correct
+3. Check .flaky-autopilot.json syntax
+4. Ensure files actually exist
+
+If hashes don't change:
+1. Verify import parser is finding imports
+2. Check that modified files are in dependency chain
+3. Ensure file changes are committed
+
+If performance issues:
+1. Check for infinite loops in import resolution
+2. Verify caching is working
+3. Look for redundant file reads
+
+If action fails:
+1. Check API key is valid
+2. Verify XML files are generated
+3. Check pytest/jest configuration
+4. Review action error logs
+
+==============================================

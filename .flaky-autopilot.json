@@ -1,0 +1,33 @@
+{
+  "$schema": "https://unfoldci.com/schemas/flaky-autopilot-config.json",
+  "version": "1.0",
+  "importResolver": {
+    "aliases": {
+      "@": "./src",
+      "@utils": "./src/utils",
+      "@tests": "./tests",
+      "@enterprise": "./src/enterprise",
+      "~": "./"
+    },
+    "pythonPaths": [
+      ".",
+      "./src",
+      "./tests"
+    ],
+    "extensions": [
+      ".js",
+      ".ts",
+      ".jsx",
+      ".tsx",
+      ".py"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "src"
+    ]
+  },
+  "analysis": {
+    "minRuns": 5,
+    "flakeThresdhold": 0.7
+  }
+}

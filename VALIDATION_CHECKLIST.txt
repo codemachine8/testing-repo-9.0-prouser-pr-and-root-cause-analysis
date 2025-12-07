@@ -1,0 +1,321 @@
+===============================================
+VALIDATION CHECKLIST FOR PRODUCTION RELEASE
+===============================================
+
+Use this checklist to validate the system works correctly across all scenarios.
+
+===============================================
+PART 1: BASIC IMPORT DETECTION
+===============================================
+
+[ ] Run 1: Baseline Test
+    - Push changes to trigger workflow
+    - Wait for action to complete
+    - Check action logs for:
+      ✓ "Found X local import(s)" for each test
+      ✓ "Combined hash: ..." for each test
+      ✓ No errors or warnings about missing files
+
+    Record import counts:
+    - test-4-level-chain: _____ imports (expected: 4-5)
+    - test-many-imports: _____ imports (expected: 10+)
+    - test-hash-detection: _____ imports (expected: 1-3)
+    - test-edge-cases: _____ imports (expected: 0-2 per test)
+
+[ ] Verify JavaScript imports work
+    - Check logs show imports from src/level1, src/level2, etc.
+    - Verify both require() and import detected (if using TS)
+
+[ ] Verify TypeScript imports work
+    - Check logs show imports from src/ts-level1, etc.
+    - Verify .ts files correctly resolved
+
+[ ] Verify Python imports work
+    - Check logs show imports from py_level1, py_level2, etc.
+    - Note: May show 0 imports if absolute imports not configured
+
+===============================================
+PART 2: HASH CHANGE DETECTION
+===============================================
+
+Baseline hashes needed from Run 1.
+
+[ ] Run 2: Modify Test File
+    - Edit: tests/hash-validation/test-hash-detection.test.js
+    - Change: CHANGE_1 → CHANGE_2 (in comment at bottom)
+    - Commit and push
+    - Expected: ALL 4 tests in this file have DIFFERENT hashes
+
+    Verify:
+    - test_hash_baseline: OLD HASH ___________ → NEW HASH ___________
+    - test_hash_with_direct_import: CHANGED? [ ]
+    - test_hash_with_deep_import: CHANGED? [ ]
+    - test_hash_flaky_with_imports: CHANGED? [ ]
+
+[ ] Run 3: Modify Direct Import (Level 1)
+    - Revert Run 2 changes (CHANGE_2 → CHANGE_1)
+    - Edit: src/hash-test/module-a.js
+    - Change: CHANGE_1 → CHANGE_2 (in comment)
+    - Commit and push
+    - Expected: ALL tests change (all import module-a)
+
+    Verify all tests' hashes changed: [ ]
+
+[ ] Run 4: Modify 2nd Level Import
+    - Revert Run 3 (CHANGE_2 → CHANGE_1)
+    - Edit: src/hash-test/module-b.js
+    - Change: CHANGE_1 → CHANGE_2
+    - Commit and push
+    - Expected: Only tests using chain A→B→C change
+
+    Verify:
+    - test_hash_baseline: CHANGED [ ]
+    - test_hash_with_direct_import: NO CHANGE [ ]
+    - test_hash_with_deep_import: CHANGED [ ]
+
+[ ] Run 5: Modify 3rd Level Import
+    - Revert Run 4
+    - Edit: src/hash-test/module-c.js
+    - Change: CHANGE_1 → CHANGE_2
+    - Expected: Only tests using full chain change
+
+    Verify same pattern as Run 4: [ ]
+
+[ ] Run 6: Modify Deep Dependency (4 levels)
+    - Edit: src/level4/database.js
+    - Add comment: "// VALIDATION TEST"
+    - Expected: All tests importing via deep chain change
+
+    Verify:
+    - test-4-level-chain tests: ALL CHANGED [ ]
+    - test-many-imports tests: ALL CHANGED [ ]
+
+===============================================
+PART 3: ALIAS IMPORTS (ENHANCED RESOLVER)
+===============================================
+
+[ ] Verify .flaky-autopilot.json loaded
+    - Check logs for: "📁 Import Resolver initialized"
+    - Should show: "Aliases detected: 4"
+    - Should show: "Python paths: ., ./src, ./tests"
+
+[ ] Test alias imports work
+    - Check: tests/alias-imports/test-alias-imports.test.js
+    - Logs should show imports detected
+    - If not detected, tests use fallback (acceptable)
+
+    Aliases detected? [ ] YES [ ] NO (fallback used)
+
+[ ] If aliases work, test alias hash changes
+    - Edit: src/utils.js (aliased as @/utils)
+    - Add comment
+    - Expected: test-alias-imports hashes change
+
+    Verified: [ ]
+
+===============================================
+PART 4: PYTHON ABSOLUTE IMPORTS
+===============================================
+
+[ ] Test Python with configured paths
+    - Check pytest.ini has pythonpath
+    - Or check .flaky-autopilot.json has pythonPaths
+
+    Configuration found? [ ]
+
+[ ] Verify Python imports detected
+    - tests/python-deep/test_4_level_chain.py
+    - Should show imports from py_level1, etc.
+
+    Imports detected: _____ (expected: 3-5)
+
+[ ] If no imports detected:
+    - This is acceptable (documented limitation)
+    - Tests still work, just no dependency hashing
+    - Mark as: [ ] KNOWN LIMITATION
+
+===============================================
+PART 5: PERFORMANCE VALIDATION
+===============================================
+
+[ ] Run multiple times (5-10 runs)
+    - Record action duration each run
+
+    Run times:
+    1. _____ seconds
+    2. _____ seconds
+    3. _____ seconds
+    4. _____ seconds
+    5. _____ seconds
+
+    Average: _____ seconds
+    Expected: <60 seconds
+
+[ ] Check for timeout errors
+    - No timeouts? [ ]
+    - No "too many files" errors? [ ]
+
+[ ] Verify stress test passes
+    - test-many-imports should complete
+    - Check test_many_imports_performance passes
+
+    Performance test passed? [ ]
+
+===============================================
+PART 6: FLAKY TEST DETECTION
+===============================================
+
+[ ] After 5+ runs, check dashboard
+    - Flaky tests detected: _____ (expected: 25-30)
+
+    Expected flaky tests found:
+    - test_4_level_flaky_transaction [ ]
+    - test_4_level_logger_flaky [ ]
+    - test_many_imports_flaky_deep [ ]
+    - test_hash_flaky_with_imports [ ]
+    - External dependency tests [ ]
+    - Async/await tests [ ]
+
+[ ] Verify pass rates make sense
+    - Highly flaky tests: 30-70% pass rate
+    - Stable tests: 100% pass rate
+
+    Pass rates look correct? [ ]
+
+[ ] Check AI analysis quality
+    - View generated fix PRs
+    - Do fixes make sense? [ ]
+    - Are explanations clear? [ ]
+    - Do fixes target correct file? [ ]
+
+===============================================
+PART 7: EDGE CASES
+===============================================
+
+[ ] Test with no imports works
+    - test_no_imports should show "Found 0 local import(s)"
+    - Hash still calculated (test file only)
+
+    Verified: [ ]
+
+[ ] Test with only external imports
+    - test_only_external_imports
+    - Should show "Found 0 local import(s)"
+    - node_modules not included in hash
+
+    Verified: [ ]
+
+[ ] Test with nonexistent import
+    - test_nonexistent_import_handled
+    - Should not crash action
+    - Test should fail (expected)
+
+    Action continued? [ ]
+
+[ ] Test with same file imported multiple times
+    - Should only include file once in hash
+    - Check logs don't show duplicates
+
+    Verified: [ ]
+
+===============================================
+PART 8: MULTI-LANGUAGE SUPPORT
+===============================================
+
+[ ] JavaScript deep imports
+    - 4-level chain detected: [ ]
+    - Hashes change correctly: [ ]
+
+[ ] TypeScript deep imports
+    - 4-level chain detected: [ ]
+    - .ts files resolved: [ ]
+    - Interfaces/types don't break parsing: [ ]
+
+[ ] Python deep imports
+    - Imports detected (if configured): [ ]
+    - Or graceful degradation: [ ]
+
+===============================================
+PART 9: ERROR HANDLING
+===============================================
+
+[ ] Test survives malformed config
+    - Temporarily break .flaky-autopilot.json
+    - Action should fall back to legacy parser
+    - Should not crash
+
+    Graceful degradation? [ ]
+
+[ ] Test survives missing files
+    - Import pointing to deleted file
+    - Action should log warning
+    - Should continue processing
+
+    Continues processing? [ ]
+
+===============================================
+PART 10: PRODUCTION READINESS
+===============================================
+
+[ ] Documentation complete
+    - IMPORT_SUPPORT.md exists [ ]
+    - IMPORT_CONFIGURATION_GUIDE.md exists [ ]
+    - IMPORT_RESOLVER_DESIGN.md exists [ ]
+    - Examples provided [ ]
+
+[ ] Error messages helpful
+    - Clear warnings for missing files [ ]
+    - Clear logs for alias detection [ ]
+    - Helpful troubleshooting info [ ]
+
+[ ] Performance acceptable
+    - Average run time <60s [ ]
+    - No timeouts [ ]
+    - Reasonable memory usage [ ]
+
+[ ] Backwards compatible
+    - Works without .flaky-autopilot.json [ ]
+    - Works with existing repos [ ]
+    - Falls back gracefully [ ]
+
+[ ] Security validated
+    - No arbitrary code execution [ ]
+    - Config files validated [ ]
+    - Path traversal prevented [ ]
+
+===============================================
+FINAL CHECKLIST
+===============================================
+
+[ ] All import detection tests pass
+[ ] Hash changes detected correctly
+[ ] Alias resolution works (or graceful fallback)
+[ ] Python imports work (or documented limitation)
+[ ] Performance meets requirements (<60s)
+[ ] Flaky tests correctly identified (25-30)
+[ ] AI generates quality fixes
+[ ] Edge cases handled gracefully
+[ ] Multi-language support validated
+[ ] Error handling robust
+[ ] Documentation complete
+[ ] Production ready
+
+===============================================
+RELEASE DECISION
+===============================================
+
+PASS CRITERIA:
+- Core import detection: 100% working
+- Hash change detection: 100% working
+- Performance: <60s average
+- Flaky detection: 80%+ accuracy
+- Error handling: No crashes
+
+RELEASE: [ ] GO [ ] NO-GO
+
+If NO-GO, issues found:
+_________________________________________________
+_________________________________________________
+_________________________________________________
+
+===============================================

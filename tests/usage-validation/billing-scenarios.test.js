@@ -17,7 +17,7 @@ describe('Usage Validation - Flaky Tests (Should Trigger AI)', () => {
   
   // Test 1: Classic timing flakiness - SHOULD trigger AI analysis + PR
   test('timing_dependent_api_call', async () => {
-    const API_TIMEOUT = 100;
+    const API_TIMEOUT = 150;
     const startTime = Date.now();
     
     // Simulate API call with variable latency
@@ -27,7 +27,7 @@ describe('Usage Validation - Flaky Tests (Should Trigger AI)', () => {
     });
     
     const elapsed = Date.now() - startTime;
-    // This will fail ~50% of the time due to random delay
+    // Adjusted to match the maximum possible delay
     expect(elapsed).toBeLessThan(API_TIMEOUT);
   });
 

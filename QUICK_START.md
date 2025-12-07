@@ -4,7 +4,7 @@
 
 New test files to validate all critical functionality:
   
-``` 
+```  
 NEW FILES:
 ├── src/
 │   ├── auth-helper.js          ← Dependency for import parsing tests

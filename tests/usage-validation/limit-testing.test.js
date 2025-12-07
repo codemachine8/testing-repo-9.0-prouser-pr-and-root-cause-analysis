@@ -128,15 +128,15 @@ describe('Limit Testing - Unique Flaky Tests Batch 2', () => {
   test('flaky_batch2_test2_queue_order', async () => {
     const queue = [];
     
-    const enqueue = async (item) => {
-      await new Promise(r => setTimeout(r, Math.random() * 15));
+    const enqueue = async (item, delay) => {
+      await new Promise(r => setTimeout(r, delay));
       queue.push(item);
     };
     
     await Promise.all([
-      enqueue('first'),
-      enqueue('second'),
-      enqueue('third'),
+      enqueue('first', 10),
+      enqueue('second', 20),
+      enqueue('third', 30),
     ]);
     
     expect(queue[0]).toBe('first');

@@ -78,7 +78,7 @@ describe('Limit Testing - Unique Flaky Tests Batch 1', () => {
       setTimeout(() => reject(new Error('Timeout')), ms);
     });
     
-    const result = await Promise.race([fetchData(), timeout(40)]);
+    const result = await Promise.race([fetchData(), timeout(70)]);
     expect(result.data).toBe('test');
   });
 

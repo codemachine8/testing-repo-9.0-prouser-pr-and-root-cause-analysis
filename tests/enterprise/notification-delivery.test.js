@@ -88,6 +88,9 @@ describe('NotificationDelivery', () => {
   });
 
   test('successRateCalculation', async () => {
+    const originalMathRandom = Math.random;
+    Math.random = () => 0.5; // Mock Math.random to always return 0.5
+
     hub.registerChannel('unstable', async () => {
       if (Math.random() < 0.3) throw new Error('Random failure');
     });
@@ -102,6 +105,8 @@ describe('NotificationDelivery', () => {
     expect(stats.sent + stats.failed).toBe(10);
     expect(stats.successRate).toBeGreaterThanOrEqual(0);
     expect(stats.successRate).toBeLessThanOrEqual(1);
+
+    Math.random = originalMathRandom; // Restore Math.random
   });
 
   test('notificationRetrieval', async () => {

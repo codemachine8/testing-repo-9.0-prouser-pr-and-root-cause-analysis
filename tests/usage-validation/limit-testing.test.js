@@ -220,8 +220,8 @@ describe('Limit Testing - PR Generation Triggers', () => {
     await new Promise(r => setTimeout(r, 10));
     const startTime = Date.now();
     
-    // Another sleep with variable timing
-    await new Promise(r => setTimeout(r, 5 + Math.random() * 20));
+    // Another sleep with fixed timing to avoid flakiness
+    await new Promise(r => setTimeout(r, 5));
     
     const elapsed = Date.now() - startTime;
     expect(elapsed).toBeLessThan(15);

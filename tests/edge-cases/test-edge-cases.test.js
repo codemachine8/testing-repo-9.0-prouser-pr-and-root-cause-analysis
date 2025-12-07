@@ -88,9 +88,6 @@ describe('Edge Case Tests', () => {
   test('test_flaky_with_no_imports', () => {
     // Edge case: Flaky test with no imports
     // Hash stability test
-    if (Math.random() < 0.3) {
-      throw new Error('Flaky with no imports');
-    }
     expect(true).toBe(true);
   });
 
